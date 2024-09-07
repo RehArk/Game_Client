@@ -1,5 +1,6 @@
 package net.vincent_clerc.network;
 
+import net.vincent_clerc.utils.Callback;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -19,53 +20,37 @@ public class NetworkManager {
     private ExecutorService executorService;
     private Selector selector;
 
-    private ConnectionHandler connectionHandler;
+    public final ConnectionHandler connectionHandler;
+
+    public NetworkManager(Callback playerConnectionCallback) {
+        this.connectionHandler = new ConnectionHandler(playerConnectionCallback);
+    }
 
     public void initialize() {
+
         this.executorService = Executors.newSingleThreadExecutor(); // Create a single-threaded executor
-        this.connectionHandler = new ConnectionHandler();
         this.connectToServer();
     }
 
     private void connectToServer() {
 
-        executorService.submit(() -> {
+        try {
+            this.selector = Selector.open();
+            SocketChannel socketChannel = SocketChannel.open();
+            socketChannel.configureBlocking(false); // Mode non-bloquant
+            socketChannel.connect(new InetSocketAddress(SERVER_ADDRESS, SERVER_PORT));
+            socketChannel.register(selector, SelectionKey.OP_CONNECT);
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.exit(0);
+        }
 
-            try {
-                this.selector = Selector.open();
-                SocketChannel socketChannel = SocketChannel.open();
-                socketChannel.configureBlocking(false); // Mode non-bloquant
-                socketChannel.connect(new InetSocketAddress(SERVER_ADDRESS, SERVER_PORT));
-                socketChannel.register(selector, SelectionKey.OP_CONNECT);
-            } catch (IOException e) {
-                e.printStackTrace();
-                System.exit(0);
-            }
+        executorService.submit(() -> {
 
             while (true) {
 
                 try {
-
-                    selector.select();
-
-                    Set<SelectionKey> selectedKeys = selector.selectedKeys();
-                    Iterator<SelectionKey> keyIterator = selectedKeys.iterator();
-
-                    while (keyIterator.hasNext()) {
-
-                        SelectionKey key = keyIterator.next();
-
-                        if (key.isConnectable()) {
-                            this.connectionHandler.handleConnect(key);
-                        } else if (key.isReadable()) {
-                            this.connectionHandler.handleRead(key);
-                        } else if (key.isWritable()) {
-                            this.connectionHandler.handleWrite(key);
-                        }
-
-                        keyIterator.remove(); // Suppression de la clé traitée
-                    }
-
+                    this.handleConnection();
                 } catch (IOException e) {
                     e.printStackTrace();
                     System.exit(0);
@@ -74,6 +59,30 @@ public class NetworkManager {
             }
 
         });
+
+    }
+
+    private void handleConnection() throws IOException {
+
+        selector.select();
+
+        Set<SelectionKey> selectedKeys = selector.selectedKeys();
+        Iterator<SelectionKey> keyIterator = selectedKeys.iterator();
+
+        while (keyIterator.hasNext()) {
+
+            SelectionKey key = keyIterator.next();
+
+            if (key.isConnectable()) {
+                this.connectionHandler.handleConnect(key);
+            } else if (key.isReadable()) {
+                this.connectionHandler.handleRead(key);
+            } else if (key.isWritable()) {
+                this.connectionHandler.handleWrite(key);
+            }
+
+            keyIterator.remove(); // Suppression de la clé traitée
+        }
 
     }
 

@@ -1,6 +1,8 @@
 package net.vincent_clerc.network;
 
-import org.lwjgl.Sys;
+import net.vincent_clerc.utils.Callback;
+import net.vincent_clerc.network.message_processor.InitialMessageProcessor;
+import net.vincent_clerc.network.message_processor.MessageProcessor;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -10,6 +12,13 @@ import java.nio.channels.SocketChannel;
 
 public class ConnectionHandler {
 
+    public MessageProcessor messageProcessor;
+    public final Callback playerConnectionCallback;
+
+    public ConnectionHandler(Callback playerConnectionCallback) {
+        this.messageProcessor = new InitialMessageProcessor();
+        this.playerConnectionCallback = playerConnectionCallback;
+    }
 
     public String readMessage(SocketChannel channel) throws IOException {
 
@@ -19,9 +28,16 @@ public class ConnectionHandler {
         int bytesRead;
 
         while ((bytesRead = channel.read(buffer)) > 0) {
+
             buffer.flip();
-            byteArrayOutputStream.write(buffer.array(), 0, bytesRead);
+
+            byte[] data = new byte[buffer.remaining()];
+            buffer.get(data);
+
+            byteArrayOutputStream.write(data);
+
             buffer.clear();
+
         }
 
         if (bytesRead == -1) {
@@ -31,7 +47,7 @@ public class ConnectionHandler {
 
         String message = byteArrayOutputStream.toString();
 
-        System.out.println("Message from server : " + message);
+//        System.out.println("Message from server : " + message);
 
         return message;
 
@@ -48,13 +64,12 @@ public class ConnectionHandler {
         channel.configureBlocking(false);
         channel.register(key.selector(), SelectionKey.OP_WRITE);
 
-        String message = this.readMessage(channel);
-
-        // TODO : handle message
     }
 
     public void handleRead(SelectionKey key) throws IOException {
-        // TODO : handle message
+        SocketChannel channel = (SocketChannel) key.channel();
+        String message = this.readMessage(channel);
+        this.messageProcessor.process(this.playerConnectionCallback, message);
     }
 
     public void handleWrite(SelectionKey key) throws IOException {
