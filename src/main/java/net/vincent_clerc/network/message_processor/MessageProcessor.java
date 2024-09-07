@@ -5,6 +5,12 @@ import net.vincent_clerc.utils.Callback;
 
 public abstract class MessageProcessor {
 
-    public abstract void process(Callback callback, String message) throws JsonProcessingException;
+    protected  Callback callback;
+
+    public MessageProcessor(Callback callback) {
+        this.callback = callback;
+    }
+
+    public abstract void process(String message) throws JsonProcessingException;
 
 }

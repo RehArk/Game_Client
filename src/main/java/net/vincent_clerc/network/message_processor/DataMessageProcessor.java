@@ -4,10 +4,13 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import net.vincent_clerc.utils.Callback;
 
 public class DataMessageProcessor extends MessageProcessor {
-
-    @Override
-    public void process(Callback callback, String message) throws JsonProcessingException {
-
+    
+    public DataMessageProcessor(Callback callback) {
+        super(callback);
     }
 
+    @Override
+    public void process(String message) throws JsonProcessingException {
+
+    }
 }

@@ -13,11 +13,9 @@ import java.nio.channels.SocketChannel;
 public class ConnectionHandler {
 
     public MessageProcessor messageProcessor;
-    public final Callback playerConnectionCallback;
 
     public ConnectionHandler(Callback playerConnectionCallback) {
-        this.messageProcessor = new InitialMessageProcessor();
-        this.playerConnectionCallback = playerConnectionCallback;
+        this.messageProcessor = new InitialMessageProcessor(playerConnectionCallback);
     }
 
     public String readMessage(SocketChannel channel) throws IOException {
@@ -69,7 +67,7 @@ public class ConnectionHandler {
     public void handleRead(SelectionKey key) throws IOException {
         SocketChannel channel = (SocketChannel) key.channel();
         String message = this.readMessage(channel);
-        this.messageProcessor.process(this.playerConnectionCallback, message);
+        this.messageProcessor.process(message);
     }
 
     public void handleWrite(SelectionKey key) throws IOException {

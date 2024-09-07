@@ -28,17 +28,23 @@ public class Game extends SimpleApplication {
     }
 
     public Game() {
+
         this.gameManager = new GameManager();
         this.networkManager = new NetworkManager((id) -> {
 
-            Entity currentPlayer = new Entity(UUID.fromString(id.toString()));
+            Entity currentPlayer = new Entity(UUID.fromString(id[0].toString()));
 
             this.gameManager.addEntity(currentPlayer);
             this.gameManager.setCurrentPlayer(currentPlayer);
 
-            this.networkManager.connectionHandler.messageProcessor = new DataMessageProcessor();
+            this.networkManager.connectionHandler.messageProcessor = new DataMessageProcessor(this::test);
 
         });
+
+    }
+
+    private void test(Object... objects) {
+        System.out.println("Test");
     }
 
     private NetworkManager networkManager;
