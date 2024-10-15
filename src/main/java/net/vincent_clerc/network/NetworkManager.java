@@ -1,9 +1,10 @@
 package net.vincent_clerc.network;
 
-import net.vincent_clerc.utils.Callback;
+import net.vincent_clerc.utils.callbacks.PlayerConnectionCallback;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
@@ -22,14 +23,14 @@ public class NetworkManager {
 
     public final ConnectionHandler connectionHandler;
 
-    public NetworkManager(Callback playerConnectionCallback) {
+    public NetworkManager(PlayerConnectionCallback playerConnectionCallback) {
         this.connectionHandler = new ConnectionHandler(playerConnectionCallback);
+        this.executorService = Executors.newSingleThreadExecutor();
     }
 
     public void initialize() {
-
-        this.executorService = Executors.newSingleThreadExecutor(); // Create a single-threaded executor
         this.connectToServer();
+        executorService.submit(this::run);
     }
 
     private void connectToServer() {
@@ -45,20 +46,20 @@ public class NetworkManager {
             System.exit(0);
         }
 
-        executorService.submit(() -> {
+    }
 
-            while (true) {
+    private void run() {
 
-                try {
-                    this.handleConnection();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    System.exit(0);
-                }
+        while (true) {
 
+            try {
+                this.handleConnection();
+            } catch (IOException e) {
+                e.printStackTrace();
+                System.exit(0);
             }
 
-        });
+        }
 
     }
 
@@ -81,7 +82,26 @@ public class NetworkManager {
                 this.connectionHandler.handleWrite(key);
             }
 
-            keyIterator.remove(); // Suppression de la clé traitée
+            keyIterator.remove();
+        }
+
+    }
+
+    public void sendMessage(String message) {
+
+        SocketChannel channel = (SocketChannel) this.selector.keys().stream()
+                .filter(key -> key.channel() instanceof SocketChannel)
+                .map(key -> (SocketChannel) key.channel())
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("SocketChannel not found"));
+
+        try {
+            ByteBuffer buffer = ByteBuffer.wrap(message.getBytes());
+            while (buffer.hasRemaining()) {
+                channel.write(buffer);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
 
     }

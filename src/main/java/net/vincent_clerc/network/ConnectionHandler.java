@@ -1,6 +1,6 @@
 package net.vincent_clerc.network;
 
-import net.vincent_clerc.utils.Callback;
+import net.vincent_clerc.utils.callbacks.PlayerConnectionCallback;
 import net.vincent_clerc.network.message_processor.InitialMessageProcessor;
 import net.vincent_clerc.network.message_processor.MessageProcessor;
 
@@ -14,7 +14,7 @@ public class ConnectionHandler {
 
     public MessageProcessor messageProcessor;
 
-    public ConnectionHandler(Callback playerConnectionCallback) {
+    public ConnectionHandler(PlayerConnectionCallback playerConnectionCallback) {
         this.messageProcessor = new InitialMessageProcessor(playerConnectionCallback);
     }
 
@@ -44,8 +44,6 @@ public class ConnectionHandler {
         }
 
         String message = byteArrayOutputStream.toString();
-
-//        System.out.println("Message from server : " + message);
 
         return message;
 

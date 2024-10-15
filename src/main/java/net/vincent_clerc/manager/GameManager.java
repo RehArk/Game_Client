@@ -1,5 +1,6 @@
 package net.vincent_clerc.manager;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.jme3.input.CameraInput;
 import com.jme3.input.ChaseCamera;
 import com.jme3.light.AmbientLight;
@@ -9,6 +10,7 @@ import com.jme3.math.FastMath;
 import com.jme3.math.Vector3f;
 
 import net.vincent_clerc.Game;
+import net.vincent_clerc.entities.CurrentPlayer;
 import net.vincent_clerc.entities.Entity;
 
 import java.util.Map;
@@ -18,28 +20,11 @@ public class GameManager {
 
     private Game game;
     private Map<String, Entity> entities;
-    private Entity currentPlayer;
+    private CurrentPlayer currentPlayer;
 
     public GameManager(Game game) {
         this.game = game;
         this.entities = new ConcurrentHashMap<>();
-    }
-
-    public Entity getCurrentPlayer() {
-        return this.currentPlayer;
-    }
-
-    public void setCurrentPlayer(Entity entity) {
-        this.currentPlayer = entity;
-    }
-
-    public void addEntity(Entity entity) {
-        this.entities.put(entity.getId().toString(), entity);
-        this.game.addEntity(entity);
-    }
-
-    public Map<String, Entity> getEntities() {
-        return this.entities;
     }
 
     public void initialize() {
@@ -72,6 +57,43 @@ public class GameManager {
         ambient.setColor(ColorRGBA.LightGray.mult(0.2f));
         game.getEntities().addLight(ambient);
 
+    }
+
+    // ---------- CURRENT PLAYER ---------- //
+
+    public CurrentPlayer getCurrentPlayer() {
+        return this.currentPlayer;
+    }
+
+    public void setCurrentPlayer(CurrentPlayer entity) {
+            this.currentPlayer = entity;
+    }
+
+    // ---------- ENTITIES ---------- //
+
+    public void addEntity(Entity entity) {
+        this.entities.put(entity.getId().toString(), entity);
+        this.game.addEntity(entity);
+    }
+
+    public void updateEntity(Entity entity, JsonNode entityNode) {
+
+        JsonNode position = entityNode.get("position");
+        float x = (float) position.get("x").asDouble();
+        float y = (float) position.get("y").asDouble();
+        float z = (float) position.get("z").asDouble();
+        entity.setPosition(x, y, z);
+
+        JsonNode rotation = entityNode.get("rotation");
+        float rx = (float) rotation.get("x").asDouble();
+        float ry = (float) rotation.get("y").asDouble();
+        float rz = (float) rotation.get("z").asDouble();
+        entity.setRotation(rx, ry, rz);
+
+    }
+
+    public Map<String, Entity> getEntities() {
+        return this.entities;
     }
 
 
